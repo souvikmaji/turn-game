@@ -15,3 +15,11 @@ Tested the websocket connection using the [**WebSocket King Client**](https://ch
 Server Home: <http://localhost:8080/>
 
 Websocket Address: <ws://127.0.0.1:8181/ws>
+
+
+## TODO
+
+- count game control message
+- graceful client deregistration
+- refactor consts
+- customize ws connection

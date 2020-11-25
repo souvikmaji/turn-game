@@ -7,7 +7,7 @@ import (
 )
 
 var addr = flag.String("addr", ":8080", "http service address")
-var room *Room
+var lobby *Lobby
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving home")
@@ -16,7 +16,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 
 func serveWebsocket(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving websocket")
-	serveWsClient(room, w, r)
+	serveWsClient(lobby, w, r)
 }
 
 func main() {
@@ -24,8 +24,8 @@ func main() {
 
 	log.Println("starting server at: ", *addr)
 
-	room = newRoom()
-	go room.run()
+	lobby = newLobby()
+	go lobby.run()
 
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", serveWebsocket)

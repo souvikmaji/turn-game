@@ -4,9 +4,9 @@ import (
 	"log"
 )
 
-// Room maintains the set of active clients and broadcasts messages to the
+// Lobby maintains the set of active clients and broadcasts messages to the
 // clients.
-type Room struct {
+type Lobby struct {
 	// Register requests from the clients.
 	register chan *Client
 
@@ -17,15 +17,15 @@ type Room struct {
 	broadcast chan []byte
 }
 
-func newRoom() *Room {
-	return &Room{
+func newLobby() *Lobby {
+	return &Lobby{
 		register:  make(chan *Client),
 		broadcast: make(chan []byte),
 		clients:   make(map[*Client]bool),
 	}
 }
 
-func (r *Room) run() {
+func (r *Lobby) run() {
 	for {
 		select {
 		case client := <-r.register:

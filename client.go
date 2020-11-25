@@ -13,9 +13,9 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-// Client is a middleman between the websocket connection and the room.
+// Client is a middleman between the websocket connection and the lobby.
 type Client struct {
-	room *Room
+	lobby *Lobby
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -24,7 +24,7 @@ type Client struct {
 	send chan []byte
 }
 
-// read pumps messages from the websocket connection to the room.
+// read pumps messages from the websocket connection to the lobby.
 //
 // The application runs read method in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
@@ -40,11 +40,11 @@ func (c *Client) read() {
 			log.Printf("error: %v", err)
 			break
 		}
-		c.room.broadcast <- message
+		c.lobby.broadcast <- message
 	}
 }
 
-// write pumps messages from the room to the websocket connection.
+// write pumps messages from the lobby to the websocket connection.
 //
 // A goroutine running write method is started for each connection. The
 // application ensures that there is at most one writer to a connection by
@@ -55,7 +55,7 @@ func (c *Client) write() {
 		select {
 		case message, ok := <-c.send:
 			if !ok {
-				log.Println("room closed the channel")
+				log.Println("client closed the channel")
 				return
 			}
 
@@ -80,16 +80,16 @@ func (c *Client) write() {
 }
 
 // serveWebsocket handles websocket requests from the peer.
-func serveWsClient(room *Room, w http.ResponseWriter, r *http.Request) {
+func serveWsClient(lobby *Lobby, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{room: room, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{lobby: lobby, conn: conn, send: make(chan []byte, 256)}
 
 	// registering new client
-	client.room.register <- client
+	client.lobby.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.

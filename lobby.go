@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"log"
 )
 
 // Lobby maintains the set of client rooms
@@ -24,10 +24,7 @@ func (l *Lobby) run() {
 	for {
 		select {
 		case client := <-l.register:
-			room, err := l.findRoom()
-			if err != nil {
-				// TODO: log and send message to client
-			}
+			room := l.findRoom()
 
 			// adding client to a room
 			client.room = room
@@ -39,13 +36,14 @@ func (l *Lobby) run() {
 	}
 }
 
-func (l *Lobby) findRoom() (*Room, error) {
-	if len(l.rooms) == 0 {
-		room := newRoom()
+func (l *Lobby) findRoom() *Room {
+	for room := range l.rooms {
 
-		go room.run()
-		return room, nil
+		if !room.isFull {
+			return room
+		}
 	}
 
-	return nil, errors.New("no room found")
+	log.Println("creating new room")
+	return newRoom()
 }

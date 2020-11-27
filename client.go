@@ -15,7 +15,7 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the lobby.
 type Client struct {
-	lobby *Lobby
+	room *Room
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -40,7 +40,7 @@ func (c *Client) read() {
 			log.Printf("error: %v", err)
 			break
 		}
-		c.lobby.broadcast <- message
+		c.room.broadcast <- message
 	}
 }
 
@@ -79,17 +79,17 @@ func (c *Client) write() {
 	}
 }
 
-// serveWebsocket handles websocket requests from the peer.
+// serveWebsocket handles new websocket requests from the peer.
 func serveWsClient(lobby *Lobby, w http.ResponseWriter, r *http.Request) {
+	// upgrade http connection to websocket protocol
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{lobby: lobby, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{conn: conn, send: make(chan []byte, 256)}
 
-	// registering new client
-	client.lobby.register <- client
+	lobby.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.

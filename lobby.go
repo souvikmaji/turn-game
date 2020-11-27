@@ -1,46 +1,51 @@
 package main
 
 import (
-	"log"
+	"errors"
 )
 
-// Lobby maintains the set of active clients and broadcasts messages to the
-// clients.
+// Lobby maintains the set of client rooms
 type Lobby struct {
 	// Register requests from the clients.
 	register chan *Client
 
-	// Registered clients.
-	clients map[*Client]bool
-
-	// Inbound messages from the clients.
-	broadcast chan []byte
+	// Active rooms with clients
+	rooms map[*Room]bool
 }
 
 func newLobby() *Lobby {
 	return &Lobby{
-		register:  make(chan *Client),
-		broadcast: make(chan []byte),
-		clients:   make(map[*Client]bool),
+		register: make(chan *Client),
+		rooms:    make(map[*Room]bool),
 	}
 }
 
-func (r *Lobby) run() {
+func (l *Lobby) run() {
 	for {
 		select {
-		case client := <-r.register:
-			// adding new client to the registered clients map
-			r.clients[client] = true
-		case message := <-r.broadcast:
-			log.Printf("broadcasting message to clients: %s\n", string(message))
-			for client := range r.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(r.clients, client)
-				}
+		case client := <-l.register:
+			room, err := l.findRoom()
+			if err != nil {
+				// TODO: log and send message to client
 			}
+
+			// adding client to a room
+			client.room = room
+			client.room.register <- client
+
+			// adding this new room in the lobby's room list
+			l.rooms[room] = true
 		}
 	}
+}
+
+func (l *Lobby) findRoom() (*Room, error) {
+	if len(l.rooms) == 0 {
+		room := newRoom()
+
+		go room.run()
+		return room, nil
+	}
+
+	return nil, errors.New("no room found")
 }

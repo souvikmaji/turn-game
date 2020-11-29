@@ -78,13 +78,13 @@ func (r *Room) run() {
 
 			// min two players required to play game
 			if len(r.clients) < 2 {
-				r.handleError(errors.New("waiting for other players to join"))
+				r.handleError(client, errors.New("waiting for other players to join"))
 				break
 			}
 
 			//  allow only when next turn is for this client
 			if client.position != r.nextTurn {
-				r.handleError(errors.New("Not your turn"))
+				r.handleError(client, errors.New("Not your turn"))
 				break
 			}
 
@@ -101,7 +101,7 @@ func (r *Room) run() {
 			// create client response
 			message, err := r.createResponse()
 			if err != nil {
-				r.handleError(err)
+				r.handleError(client, err)
 				break
 			}
 
@@ -139,13 +139,16 @@ func (r *Room) createResponse() ([]byte, error) {
 	return json.Marshal(response)
 }
 
-func (r *Room) handleError(err error) {
-	response, err := r.createErrResponse(err)
-	if err != nil {
-		log.Println("error marshalling scores", err)
-		r.broadcast([]byte(err.Error()))
+func (r *Room) handleError(client *Client, err error) {
+	if client != nil {
+		response, err := r.createErrResponse(err)
+		if err != nil {
+			log.Println("error marshalling scores", err)
+			client.send <- []byte(err.Error())
+		}
+		client.send <- response
 	}
-	r.broadcast(response)
+
 }
 
 func (r *Room) createErrResponse(err error) ([]byte, error) {

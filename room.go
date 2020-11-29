@@ -67,6 +67,10 @@ func (r *Room) run() {
 		case client := <-r.unregister:
 			// removing client once disconnected
 			if _, ok := r.clients[client]; ok {
+				// if it was the disconnected players turn, pass the turn to the next player
+				if r.nextTurn == client.position {
+					r.setNextTurn()
+				}
 				delete(r.clients, client)
 				close(client.send)
 			}
@@ -78,8 +82,13 @@ func (r *Room) run() {
 				break
 			}
 
-			r.nextTurn++
-			r.nextTurn = r.nextTurn % len(r.clients)
+			//  allow only when next turn is for this client
+			if client.position != r.nextTurn {
+				r.handleError(errors.New("Not your turn"))
+				break
+			}
+
+			r.setNextTurn()
 
 			// generate new client score
 			score := rand.Intn(7)

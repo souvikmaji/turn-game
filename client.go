@@ -68,8 +68,7 @@ func (c *Client) read() {
 		}
 
 		// ignore messages other than roll
-		// and allow only when next turn is for this client
-		if string(message) == "roll" && c.position == c.room.nextTurn {
+		if string(message) == "roll" {
 			c.room.playerMove <- c
 		}
 

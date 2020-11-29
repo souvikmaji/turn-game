@@ -24,7 +24,7 @@ func serveWebsocket(w http.ResponseWriter, r *http.Request) {
 func main() {
 	flag.Parse()
 
-	log.Println("starting server at: ", *addr)
+	log.Println("starting server at ", *addr)
 
 	// initialize game lobby
 	lobby = newLobby()

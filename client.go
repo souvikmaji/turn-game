@@ -29,6 +29,7 @@ type Client struct {
 	// helps to determine whose turn is next
 	position int
 
+	// room this client belongs to
 	room *Room
 
 	// The websocket connection.

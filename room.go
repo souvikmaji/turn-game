@@ -9,6 +9,7 @@ import (
 
 var (
 	maxRoomSize = 4
+	scoreToWin  = 10 // TODO: change at last based on requirement
 )
 
 // Room manages the set of active clients and broadcasts messages to the
@@ -27,6 +28,8 @@ type Room struct {
 
 	// keeping track if more players can join this room
 	isFull bool
+
+	winner *Client
 
 	// Inbound messages from the clients
 	broadcast chan *Client
@@ -75,10 +78,14 @@ func (r *Room) run() {
 
 			// generate new client score
 			score := rand.Intn(7)
-			r.clients[client] = score
+			r.clients[client] += score
+
+			if r.clients[client] >= scoreToWin {
+				r.winner = client
+			}
 
 			// create client response
-			message, err := json.Marshal(getScores(r.clients))
+			message, err := r.createResponse()
 			if err != nil {
 				log.Println("error marshalling scores", err)
 				// TODO: send error message to client
@@ -96,6 +103,14 @@ func (r *Room) run() {
 					delete(r.clients, client)
 				}
 			}
+
+			// reset room once winner is declared
+			if r.winner != nil {
+				for client := range r.clients {
+					r.clients[client] = 0
+				}
+			}
+			r.winner = nil
 		}
 	}
 }
@@ -106,11 +121,14 @@ func (r *Room) setNextTurn() {
 	r.nextTurn = r.nextTurn % len(r.clients)
 }
 
-func getScores(clients map[*Client]int) map[string]int {
-	scores := make(map[string]int)
+func (r *Room) createResponse() ([]byte, error) {
+	response := newResponse()
 
-	for client, score := range clients {
-		scores[client.username] = score
+	if r.winner != nil {
+		response.Winner = r.winner.username
 	}
-	return scores
+
+	response.setScores(r.clients)
+
+	return json.Marshal(response)
 }

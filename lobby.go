@@ -37,6 +37,7 @@ func (l *Lobby) run() {
 }
 
 func (l *Lobby) findRoom() *Room {
+	// get first non empty room
 	for room := range l.rooms {
 
 		if !room.isFull {
@@ -44,6 +45,7 @@ func (l *Lobby) findRoom() *Room {
 		}
 	}
 
+	// all rooms are full, return new
 	log.Println("creating new room")
 	return newRoom()
 }

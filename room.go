@@ -69,7 +69,7 @@ func (r *Room) run() {
 			if _, ok := r.clients[client]; ok {
 				// if it was the disconnected players turn, pass the turn to the next player
 				if r.nextTurn == client.position {
-					r.setNextTurn()
+					r.nextTurn = r.getNextTurn()
 				}
 				delete(r.clients, client)
 				close(client.send)
@@ -88,7 +88,7 @@ func (r *Room) run() {
 				break
 			}
 
-			r.setNextTurn()
+			r.nextTurn = r.getNextTurn()
 
 			// generate new client score
 			score := rand.Intn(7)
@@ -122,9 +122,18 @@ func (r *Room) run() {
 }
 
 // setup next turn
-func (r *Room) setNextTurn() {
-	r.nextTurn++
-	r.nextTurn = r.nextTurn % len(r.clients)
+func (r *Room) getNextTurn() int {
+	return (r.nextTurn + 1) % len(r.clients)
+}
+
+// check if next turn is valid
+func (r *Room) isValidNextTurn(nextMove int) bool {
+	for client := range r.clients {
+		if client.position == nextMove {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *Room) createResponse() ([]byte, error) {
@@ -134,7 +143,7 @@ func (r *Room) createResponse() ([]byte, error) {
 		response.Winner = r.winner.username
 	}
 
-	response.setScores(r.clients)
+	response.setScores(r.clients, r.nextTurn)
 
 	return json.Marshal(response)
 }

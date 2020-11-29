@@ -32,7 +32,8 @@
                 if(message.Winner !== ""){
                     item.style.backgroundColor = "green";
                     item.innerHTML += "<br/>"+ message.Winner + " Won!"
-                }       
+                }      
+                item.innerHTML += "<i/> Next Move: "+ message.NextMove + "</i>"
             }
             
             appendLog(item);

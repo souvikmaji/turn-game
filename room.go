@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"math/rand"
 	"time"
@@ -33,14 +34,14 @@ type Room struct {
 	winner *Client
 
 	// Inbound messages from the clients
-	broadcast chan *Client
+	playerMove chan *Client
 }
 
 func newRoom() *Room {
 	r := &Room{
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		broadcast:  make(chan *Client),
+		playerMove: make(chan *Client),
 		clients:    make(map[*Client]int),
 	}
 
@@ -69,11 +70,14 @@ func (r *Room) run() {
 				delete(r.clients, client)
 				close(client.send)
 			}
-		case client := <-r.broadcast:
+		case client := <-r.playerMove:
+
+			// min two players required to play game
 			if len(r.clients) < 2 {
-				log.Println("waiting for other players to join. ignoring message")
+				r.handleError(errors.New("waiting for other players to join"))
 				break
 			}
+
 			r.nextTurn++
 			r.nextTurn = r.nextTurn % len(r.clients)
 
@@ -88,22 +92,14 @@ func (r *Room) run() {
 			// create client response
 			message, err := r.createResponse()
 			if err != nil {
-				log.Println("error marshalling scores", err)
-				// TODO: send error message to client
+				r.handleError(err)
 				break
 			}
 
 			// broadcast response to all clients in room
 			log.Printf("broadcasting message to clients: %s\n", string(message))
 
-			for client := range r.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(r.clients, client)
-				}
-			}
+			r.broadcast(message)
 
 			// reset room once winner is declared
 			if r.winner != nil {
@@ -132,4 +128,31 @@ func (r *Room) createResponse() ([]byte, error) {
 	response.setScores(r.clients)
 
 	return json.Marshal(response)
+}
+
+func (r *Room) handleError(err error) {
+	response, err := r.createErrResponse(err)
+	if err != nil {
+		log.Println("error marshalling scores", err)
+		r.broadcast([]byte(err.Error()))
+	}
+	r.broadcast(response)
+}
+
+func (r *Room) createErrResponse(err error) ([]byte, error) {
+	response := &Response{}
+	response.setErrMsg(err.Error())
+
+	return json.Marshal(response)
+}
+
+func (r *Room) broadcast(message []byte) {
+	for client := range r.clients {
+		select {
+		case client.send <- message:
+		default:
+			close(client.send)
+			delete(r.clients, client)
+		}
+	}
 }

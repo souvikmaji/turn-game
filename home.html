@@ -3,18 +3,38 @@
 <head>
 <title>Dice Game</title>
 <script type="text/javascript">
-    window.onload = function () {
-        var conn;
-        var msg = document.getElementById("msg");
-        var log = document.getElementById("log");
-    
-        function appendLog(item) {
+
+    var appendLog = function (item) {
             var doScroll = log.scrollTop > log.scrollHeight - log.clientHeight - 1;
             log.appendChild(item);
             if (doScroll) {
                 log.scrollTop = log.scrollHeight - log.clientHeight;
             }
         }
+
+    var onWsMessage = function (evt) {
+                var messages = evt.data.split('\n');
+                for (var i = 0; i < messages.length; i++) {
+                    message = JSON.parse(messages[i]);
+                   
+                    var item = document.createElement("div");
+                    if(message.IsError === true){
+                        item.style.backgroundColor = "red";
+                        item.innerText = message.ErrMsg;
+                    } else {
+                        item.innerText = JSON.stringify(message.Scores)
+                    }
+                 
+                    appendLog(item);
+                }
+            };
+
+    window.onload = function () {
+        var conn;
+        var msg = document.getElementById("msg");
+        var log = document.getElementById("log");
+    
+      
     
         document.getElementById("form").onsubmit = function () {
             if (!conn) {
@@ -31,14 +51,7 @@
                 item.innerHTML = "<b>Connection closed.</b>";
                 appendLog(item);
             };
-            conn.onmessage = function (evt) {
-                var messages = evt.data.split('\n');
-                for (var i = 0; i < messages.length; i++) {
-                    var item = document.createElement("div");
-                    item.innerText = messages[i];
-                    appendLog(item);
-                }
-            };
+            conn.onmessage = onWsMessage
         } else {
             var item = document.createElement("div");
             item.innerHTML = "<b>Your browser does not support WebSockets.</b>";

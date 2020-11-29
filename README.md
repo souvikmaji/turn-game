@@ -7,19 +7,18 @@ Demo application for a turn based websocket game.
 ```
 go build
 
-./turn-game :8080
+./turn-game -addr :8080
 ```
 
-Tested the websocket connection using the [**WebSocket King Client**](https://chrome.google.com/webstore/detail/websocket-king-client/cbcbkhdmedgianpaifchdaddpnmgnknn?hl=en).
+Visit: <http://localhost:8080/>
 
-Server Home: <http://localhost:8080/>
+The websocket connection can also be tested using any 3rd part socket connection tester.
 
-Websocket Address: <ws://127.0.0.1:8181/ws>
+Ex: [**WebSocket King Client**](https://chrome.google.com/webstore/detail/websocket-king-client/cbcbkhdmedgianpaifchdaddpnmgnknn?hl=en).
 
+Websocket Address: <ws://127.0.0.1:8080/ws>
 
 ## TODO
 
 - count game control message
-- ui
-- refactor consts
 - customize ws connection

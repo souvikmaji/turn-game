@@ -93,7 +93,7 @@ func getScores(clients map[*Client]int) map[string]int {
 	scores := make(map[string]int)
 
 	for client, score := range clients {
-		scores[client.name] = score
+		scores[client.username] = score
 	}
 	return scores
 }

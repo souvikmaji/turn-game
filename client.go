@@ -8,6 +8,10 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	outBufferSize = 256
+)
+
 var (
 	newline = []byte{'\n'}
 )
@@ -20,7 +24,8 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the lobby.
 type Client struct {
-	name string
+	username string
+
 	room *Room
 
 	// The websocket connection.
@@ -28,6 +33,14 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+}
+
+func newClient(conn *websocket.Conn) *Client {
+	return &Client{
+		username: faker.Username(), //TODO: remove faker dependency
+		conn:     conn,
+		send:     make(chan []byte, outBufferSize),
+	}
 }
 
 // read pumps messages from the websocket connection to the lobby.
@@ -102,7 +115,7 @@ func serveWsClient(lobby *Lobby, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{name: faker.Username(), conn: conn, send: make(chan []byte, 256)} //TODO: remove faker dependency
+	client := newClient(conn)
 
 	lobby.register <- client
 

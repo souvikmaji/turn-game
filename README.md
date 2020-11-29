@@ -18,7 +18,5 @@ Ex: [**WebSocket King Client**](https://chrome.google.com/webstore/detail/websoc
 
 Websocket Address: <ws://127.0.0.1:8080/ws>
 
-## TODO
-
-- count game control message
-- customize ws connection
+Maximum room size is 4. Minimum is 2.
+Winning score is 61.

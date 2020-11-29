@@ -4,36 +4,40 @@
 <title>Dice Game</title>
 <script type="text/javascript">
 
+    var addItem = function (htmlText) {
+        var item = document.createElement("div");
+        item.innerHTML = htmlText;
+        appendLog(item);
+    }
+
     var appendLog = function (item) {
-            var doScroll = log.scrollTop > log.scrollHeight - log.clientHeight - 1;
-            log.appendChild(item);
-            if (doScroll) {
-                log.scrollTop = log.scrollHeight - log.clientHeight;
-            }
+        var doScroll = log.scrollTop > log.scrollHeight - log.clientHeight - 1;
+        log.appendChild(item);
+        if (doScroll) {
+            log.scrollTop = log.scrollHeight - log.clientHeight;
         }
+    }
 
     var onWsMessage = function (evt) {
-                var messages = evt.data.split('\n');
-                for (var i = 0; i < messages.length; i++) {
-                    
-                    message = JSON.parse(messages[i]);
-                   
-                    var item = document.createElement("div");
-                    if(message.IsError === true){
-                        item.style.backgroundColor = "red";
-                        item.innerHTML = message.ErrMsg;
-                    } else {
-                        item.innerHTML = JSON.stringify(message.Scores)
-                        if(message.Winner !== ""){
-                            item.style.backgroundColor = "green";
-                            item.innerHTML += "<br/>"+ message.Winner + " Won!"
-                        }
-                       
-                    }
-                 
-                    appendLog(item);
-                }
-            };
+        var messages = evt.data.split('\n');
+        for (var i = 0; i < messages.length; i++) {
+            message = JSON.parse(messages[i]);
+            
+            var item = document.createElement("div");
+            if(message.IsError === true){
+                item.style.backgroundColor = "red";
+                item.innerHTML = message.ErrMsg;
+            } else {
+                item.innerHTML = JSON.stringify(message.Scores)
+                if(message.Winner !== ""){
+                    item.style.backgroundColor = "green";
+                    item.innerHTML += "<br/>"+ message.Winner + " Won!"
+                }       
+            }
+            
+            appendLog(item);
+        }
+    };
 
     window.onload = function () {
         var conn;
@@ -51,15 +55,12 @@
         if (window["WebSocket"]) {
             conn = new WebSocket("ws://" + document.location.host + "/ws");
             conn.onclose = function (evt) {
-                var item = document.createElement("div");
-                item.innerHTML = "<b>Connection closed.</b>";
-                appendLog(item);
+                addItem("<b>Connection closed.</b>");
             };
+
             conn.onmessage = onWsMessage
         } else {
-            var item = document.createElement("div");
-            item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
-            appendLog(item);
+            addItem("<b>Your browser does not support WebSockets.</b>");
         }
     };
     </script>

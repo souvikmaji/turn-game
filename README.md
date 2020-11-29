@@ -20,6 +20,6 @@ Websocket Address: <ws://127.0.0.1:8181/ws>
 ## TODO
 
 - count game control message
-- graceful client deregistration
+- ui
 - refactor consts
 - customize ws connection

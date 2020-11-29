@@ -26,6 +26,9 @@ var upgrader = websocket.Upgrader{
 type Client struct {
 	username string
 
+	// helps to determine whose turn is next
+	position int
+
 	room *Room
 
 	// The websocket connection.
@@ -58,13 +61,14 @@ func (c *Client) read() {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				log.Printf("error: %v\n", err)
 			}
 			break
 		}
 
 		// ignore messages other than roll
-		if string(message) == "roll" {
+		// and allow only when next turn is for this client
+		if string(message) == "roll" && c.position == c.room.nextTurn {
 			c.room.broadcast <- c
 		}
 

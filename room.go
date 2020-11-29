@@ -23,6 +23,8 @@ type Room struct {
 	// Registered clients and their scores.
 	clients map[*Client]int
 
+	nextTurn int
+
 	// keeping track if more players can join this room
 	isFull bool
 
@@ -36,7 +38,6 @@ func newRoom() *Room {
 		unregister: make(chan *Client),
 		broadcast:  make(chan *Client),
 		clients:    make(map[*Client]int),
-		isFull:     false,
 	}
 
 	go r.run()
@@ -53,7 +54,8 @@ func (r *Room) run() {
 			r.clients[client] = 0
 			roomSize := len(r.clients)
 
-			client.position = roomSize
+			client.position = roomSize - 1
+
 			if roomSize == maxRoomSize {
 				r.isFull = true
 			}
@@ -64,10 +66,18 @@ func (r *Room) run() {
 				close(client.send)
 			}
 		case client := <-r.broadcast:
+			if len(r.clients) < 2 {
+				log.Println("waiting for other players to join. ignoring message")
+				break
+			}
+			r.nextTurn++
+			r.nextTurn = r.nextTurn % len(r.clients)
 
-			score := rand.Intn(6)
+			// generate new client score
+			score := rand.Intn(7)
 			r.clients[client] = score
 
+			// create client response
 			message, err := json.Marshal(getScores(r.clients))
 			if err != nil {
 				log.Println("error marshalling scores", err)
@@ -75,6 +85,7 @@ func (r *Room) run() {
 				break
 			}
 
+			// broadcast response to all clients in room
 			log.Printf("broadcasting message to clients: %s\n", string(message))
 
 			for client := range r.clients {
@@ -87,6 +98,12 @@ func (r *Room) run() {
 			}
 		}
 	}
+}
+
+// setup next turn
+func (r *Room) setNextTurn() {
+	r.nextTurn++
+	r.nextTurn = r.nextTurn % len(r.clients)
 }
 
 func getScores(clients map[*Client]int) map[string]int {

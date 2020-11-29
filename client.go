@@ -8,6 +8,10 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var (
+	newline = []byte{'\n'}
+)
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true }, // for external ws testers
 	ReadBufferSize:  1024,
@@ -16,8 +20,8 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the lobby.
 type Client struct {
-	name     string
-	room     *Room
+	name string
+	room *Room
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -33,16 +37,20 @@ type Client struct {
 // reads from this goroutine.
 func (c *Client) read() {
 	defer func() {
+		c.room.unregister <- c
 		c.conn.Close()
 	}()
 
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
-			log.Printf("error: %v", err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error: %v", err)
+			}
 			break
 		}
 
+		// ignore messages other than roll
 		if string(message) == "roll" {
 			c.room.broadcast <- c
 		}
@@ -74,6 +82,7 @@ func (c *Client) write() {
 			// Add queued chat messages to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {
+				w.Write(newline)
 				w.Write(<-c.send)
 			}
 

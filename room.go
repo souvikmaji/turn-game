@@ -17,6 +17,9 @@ type Room struct {
 	// Register requests from the clients.
 	register chan *Client
 
+	// Unregister requests from clients.
+	unregister chan *Client
+
 	// Registered clients and their scores.
 	clients map[*Client]int
 
@@ -29,10 +32,11 @@ type Room struct {
 
 func newRoom() *Room {
 	r := &Room{
-		register:  make(chan *Client),
-		broadcast: make(chan *Client),
-		clients:   make(map[*Client]int),
-		isFull:    false,
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
+		broadcast:  make(chan *Client),
+		clients:    make(map[*Client]int),
+		isFull:     false,
 	}
 
 	go r.run()
@@ -52,6 +56,12 @@ func (r *Room) run() {
 			client.position = roomSize
 			if roomSize == maxRoomSize {
 				r.isFull = true
+			}
+		case client := <-r.unregister:
+			// removing client once disconnected
+			if _, ok := r.clients[client]; ok {
+				delete(r.clients, client)
+				close(client.send)
 			}
 		case client := <-r.broadcast:
 

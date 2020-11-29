@@ -15,14 +15,20 @@
     var onWsMessage = function (evt) {
                 var messages = evt.data.split('\n');
                 for (var i = 0; i < messages.length; i++) {
+                    
                     message = JSON.parse(messages[i]);
                    
                     var item = document.createElement("div");
                     if(message.IsError === true){
                         item.style.backgroundColor = "red";
-                        item.innerText = message.ErrMsg;
+                        item.innerHTML = message.ErrMsg;
                     } else {
-                        item.innerText = JSON.stringify(message.Scores)
+                        item.innerHTML = JSON.stringify(message.Scores)
+                        if(message.Winner !== ""){
+                            item.style.backgroundColor = "green";
+                            item.innerHTML += "<br/>"+ message.Winner + " Won!"
+                        }
+                       
                     }
                  
                     appendLog(item);
@@ -33,8 +39,6 @@
         var conn;
         var msg = document.getElementById("msg");
         var log = document.getElementById("log");
-    
-      
     
         document.getElementById("form").onsubmit = function () {
             if (!conn) {

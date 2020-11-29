@@ -12,10 +12,6 @@ const (
 	outBufferSize = 256
 )
 
-var (
-	newline = []byte{'\n'}
-)
-
 var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true }, // for external ws testers
 	ReadBufferSize:  1024,
@@ -99,7 +95,6 @@ func (c *Client) write() {
 			// Add queued chat messages to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {
-				w.Write(newline)
 				w.Write(<-c.send)
 			}
 

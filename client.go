@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bxcodec/faker/v3"
 	"log"
 	"net/http"
 
@@ -15,7 +16,8 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the lobby.
 type Client struct {
-	room *Room
+	name     string
+	room     *Room
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -40,7 +42,11 @@ func (c *Client) read() {
 			log.Printf("error: %v", err)
 			break
 		}
-		c.room.broadcast <- message
+
+		if string(message) == "roll" {
+			c.room.broadcast <- c
+		}
+
 	}
 }
 
@@ -87,7 +93,7 @@ func serveWsClient(lobby *Lobby, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{conn: conn, send: make(chan []byte, 256)}
+	client := &Client{name: faker.Username(), conn: conn, send: make(chan []byte, 256)} //TODO: remove faker dependency
 
 	lobby.register <- client
 

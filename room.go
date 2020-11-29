@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
+	"math/rand"
+	"time"
 )
 
 var (
@@ -14,21 +17,22 @@ type Room struct {
 	// Register requests from the clients.
 	register chan *Client
 
-	// Registered clients.
-	clients map[*Client]bool
+	// Registered clients and their scores.
+	clients map[*Client]int
 
 	// keeping track if more players can join this room
 	isFull bool
 
-	// Inbound messages from the clients.
-	broadcast chan []byte
+	// Inbound messages from the clients
+	broadcast chan *Client
 }
 
 func newRoom() *Room {
 	r := &Room{
 		register:  make(chan *Client),
-		broadcast: make(chan []byte),
-		clients:   make(map[*Client]bool),
+		broadcast: make(chan *Client),
+		clients:   make(map[*Client]int),
+		isFull:    false,
 	}
 
 	go r.run()
@@ -36,17 +40,33 @@ func newRoom() *Room {
 }
 
 func (r *Room) run() {
+	rand.Seed(time.Now().UnixNano())
+
 	for {
 		select {
 		case client := <-r.register:
 			// adding new client to the registered clients map
-			r.clients[client] = true
+			r.clients[client] = 0
+			roomSize := len(r.clients)
 
-			if len(r.clients) == maxRoomSize {
+			client.position = roomSize
+			if roomSize == maxRoomSize {
 				r.isFull = true
 			}
-		case message := <-r.broadcast:
+		case client := <-r.broadcast:
+
+			score := rand.Intn(6)
+			r.clients[client] = score
+
+			message, err := json.Marshal(getScores(r.clients))
+			if err != nil {
+				log.Println("error marshalling scores", err)
+				// TODO: send error message to client
+				break
+			}
+
 			log.Printf("broadcasting message to clients: %s\n", string(message))
+
 			for client := range r.clients {
 				select {
 				case client.send <- message:
@@ -57,4 +77,13 @@ func (r *Room) run() {
 			}
 		}
 	}
+}
+
+func getScores(clients map[*Client]int) map[string]int {
+	scores := make(map[string]int)
+
+	for client, score := range clients {
+		scores[client.name] = score
+	}
+	return scores
 }

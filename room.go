@@ -29,6 +29,7 @@ type Room struct {
 	// keeping track if more players can join this room
 	isFull bool
 
+	// current winner of this room
 	winner *Client
 
 	// Inbound messages from the clients

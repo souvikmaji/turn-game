@@ -1,9 +1,5 @@
 package main
 
-import (
-	"log"
-)
-
 // Response represents websocket message structure
 type Response struct {
 	Winner   string

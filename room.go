@@ -10,7 +10,7 @@ import (
 
 var (
 	maxRoomSize = 4
-	scoreToWin  = 10 // TODO: change at last based on requirement
+	scoreToWin  = 61
 )
 
 // Room manages the set of active clients and broadcasts messages to the
